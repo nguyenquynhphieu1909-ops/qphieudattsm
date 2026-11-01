@@ -30,8 +30,31 @@ DATT_Smartlogistics/
 ├── train_pipeline.py          # Script huấn luyện ML & đóng gói Pipeline
 ├── rf_model_pipeline.joblib   # Model Pipeline đã đóng gói cho Backend
 └── .gitignore                 # File cấu hình bỏ qua thư mục rác Git
-## 🚀 Cập nhật Tuần 03 - Tích hợp Inference & Data
-- **Mô hình & Dữ liệu:** Đã huấn luyện lại Random Forest với dữ liệu `ml_features.csv` (741 chuyến đi) từ Thảo Vy. Sai số trung bình (MAE) đạt cực thấp: **0.94 phút**. File model cập nhật tại `rf_model_pipeline.joblib`.
-- **Dịch vụ Inference:** Đã thêm module `ml/inference/predict_eta.py` chứa hàm `predict_eta(route_id, distance_km, departure_time)` để Backend gọi API dự báo thời gian.
-- **Cơ chế Fallback (Bảo vệ API):** Tự động xử lý các tuyến đường lạ (chưa có trong tập huấn luyện) hoặc lỗi dữ liệu bằng cách tính dự phòng theo vận tốc trung bình (25km/h).
-- **Tài liệu API:** Backend xem chi tiết cấu trúc truyền dữ liệu tại `feature_spec.md`.
+---
+
+## 🚀 Báo Cáo Tiến Độ Tuần 03: Tích Hợp Inference & Data
+
+### 📊 1. Kết Quả Huấn Luyện Mô Hình (ETA Model)
+Mô hình **Random Forest** đã được tái huấn luyện thành công với bộ dữ liệu sạch `ml_features.csv` (741 chuyến đi) do Thảo Vy chuẩn bị.
+
+| Chỉ số kiểm định | Kết quả | Đánh giá |
+| :--- | :---: | :--- |
+| **MAE** (Sai số trung bình) | **0.94 phút** | 🟢 Cực kỳ chính xác |
+| **Tỷ lệ sai số < 10 phút** | **99.3%** | 🟢 Vượt chỉ tiêu |
+| **Độ phù hợp (R² Score)** | **0.893** | 🟢 Mô hình khớp dữ liệu tốt |
+
+*📍 File Pipeline mới nhất đã được lưu tại: `rf_model_pipeline.joblib`*
+
+### 🛠️ 2. Dịch Vụ Inference & Cấu Trúc Backend
+Đã xây dựng xong module dự báo thời gian thực (`ml/inference/predict_eta.py`) để Backend (Đình Phú, Tấn Phát) dễ dàng gọi API.
+
+**Cú pháp gọi hàm:**
+```python
+from ml.inference.predict_eta import predict_eta
+
+# Trả về dict chứa ETA và source (ML_RANDOM_FOREST hoặc FALLBACK)
+result = predict_eta(
+    route_id="ROUTE_01", 
+    distance_km=8.5, 
+    departure_time="2026-11-01T17:30:00"
+)
