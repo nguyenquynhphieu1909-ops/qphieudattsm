@@ -8,9 +8,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, r2_score
 
-def load_and_preprocess_data(file_path="trips_ml_v1.csv"):
+def load_and_preprocess_data(file_path="ml_features.csv"):
     if not os.path.exists(file_path):
-        # Fallback về file sample_trips.csv nếu không thấy trips_ml_v1.csv
         file_path = "sample_trips.csv"
         if not os.path.exists(file_path):
             print(f"[LỖI] Không tìm thấy file dữ liệu CSV nào trong thư mục.")
@@ -19,10 +18,16 @@ def load_and_preprocess_data(file_path="trips_ml_v1.csv"):
     df = pd.read_csv(file_path)
     print(f"-> Đã đọc dữ liệu từ file: {file_path}")
 
+    df = df.rename(columns={
+        'route_code': 'route_id',
+        'hour': 'hour_of_day',
+        'is_peak': 'is_rush_hour'
+    })
+
     # 1. Xử lý chuẩn hóa cột nhãn (Target) - Tránh bị trùng lặp cột
     if 'actual_travel_time' not in df.columns:
         target_candidates = [
-            'actual_duration_min', 'travel_time', 
+            'target_travel_time_min', 'actual_duration_min', 'travel_time',
             'duration', 'travel_time_min', 'actual_time', 'duration_min'
         ]
         for col in df.columns:
@@ -37,28 +42,11 @@ def load_and_preprocess_data(file_path="trips_ml_v1.csv"):
 
     # Loại bỏ các cột trùng tên nếu có trong file
     df = df.loc[:, ~df.columns.duplicated()].copy()
-
-    # 2. Xử lý cột thời gian xuất phát (departure_time)
-    if 'departure_time' in df.columns:
-        if 'date' in df.columns and df['departure_time'].astype(str).str.len().mean() < 10:
-            df['departure_time'] = df['date'].astype(str) + ' ' + df['departure_time'].astype(str)
-        df['departure_time'] = pd.to_datetime(df['departure_time'], format='mixed', errors='coerce')
-    else:
-        print("[LỖI] Không tìm thấy cột 'departure_time' trong file CSV.")
-        return None
-
-    # 3. Trích xuất đặc trưng thời gian
-    df['hour_of_day'] = df['departure_time'].dt.hour
-    df['day_of_week'] = df['departure_time'].dt.dayofweek
-    df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
-    df['is_rush_hour'] = df['hour_of_day'].isin([7, 8, 17, 18]).astype(int)
-
-    # Sắp xếp theo trình tự thời gian
-    df = df.sort_values(by='departure_time').reset_index(drop=True)
     return df
 
+
 def main():
-    csv_file = "trips_ml_v1.csv"
+    csv_file = "ml_features.csv"
     df = load_and_preprocess_data(csv_file)
     if df is None:
         return
